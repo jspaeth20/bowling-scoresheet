@@ -1,7 +1,7 @@
 import React from 'react';
 import GameStore from '../stores/game-store';
 import { observer } from 'mobx-react';
-import { makeStyles, Grid, Container } from '@material-ui/core';
+import { Grid } from '@material-ui/core';
 import ScoreTable from './ScoreTable';
 
 function BowlerList(props: { game: GameStore }): JSX.Element {

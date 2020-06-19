@@ -31,6 +31,8 @@ export class Frame {
     } else {
       if (this.roll2 === null) return FrameResult.Incomplete;
 
+      console.log(this);
+
       // if our first roll of round 10 is a strike or our second roll is a spare
       if (this.roll1 === 10 || this.roll1 + this.roll2 === 10) {
         if (this.roll3 === null) return FrameResult.Incomplete;
@@ -42,7 +44,9 @@ export class Frame {
   }
 
   @action setRoll1(value: number) {
-    if (value > 10) {
+    if (isNaN(value)) {
+      this.roll1 = null;
+    } else if (value > 10) {
       this.roll1 = 10;
     } else if (value < 0) {
       this.roll1 = 0;
@@ -55,22 +59,26 @@ export class Frame {
 
   @action setRoll2(value: number) {
     if (this.roll1 === null) return;
-    if (!this.isLastFrame) {
-      if (this.roll1 + value > 10) {
-        this.roll2 = 10 - this.roll1;
-      } else {
-        this.roll2 = value;
-      }
+    if (isNaN(value)) {
+      this.roll2 = null;
     } else {
-      if (this.roll1 === 10) {
-        if (value > 10) this.roll2 = 10;
-        if (value < 0) this.roll2 = 0;
-        this.roll2 = value;
-      } else {
+      if (!this.isLastFrame) {
         if (this.roll1 + value > 10) {
           this.roll2 = 10 - this.roll1;
         } else {
           this.roll2 = value;
+        }
+      } else {
+        if (this.roll1 === 10) {
+          if (value > 10) this.roll2 = 10;
+          if (value < 0) this.roll2 = 0;
+          this.roll2 = value;
+        } else {
+          if (this.roll1 + value > 10) {
+            this.roll2 = 10 - this.roll1;
+          } else {
+            this.roll2 = value;
+          }
         }
       }
     }
@@ -79,10 +87,14 @@ export class Frame {
   @action setRoll3(value: number) {
     if (this.roll1 === null) return;
     if (this.roll2 === null) return;
-    if (this.roll1 !== 10 || this.roll1 + this.roll2 !== 10) return;
-    if (value > 10) this.roll3 = 10;
-    if (value < 0) this.roll3 = 0;
-    this.roll3 = value;
+    if (this.roll1 !== 10 && this.roll1 + this.roll2 !== 10) return;
+    if (isNaN(value)) {
+      this.roll3 = null;
+    } else {
+      if (value > 10) this.roll3 = 10;
+      if (value < 0) this.roll3 = 0;
+      this.roll3 = value;
+    }
   }
 
   @action clear() {
@@ -137,13 +149,26 @@ export class Bowler {
               break;
             case FrameResult.Strike:
               const nextNextFrame = this.frames[i + 2];
-              if (nextNextFrame.roll1 === undefined) return;
+              if (nextNextFrame.roll1 === null) return;
               total += 20 + (nextNextFrame.roll1 || 0);
+              this.frames[i].score = total;
+              break;
+            case FrameResult.Complete:
+              // at this point we know the next frame is frame 10
+              console.log('frame complete');
+              if (nextFrame.roll1 === null) return;
+              if (nextFrame.roll2 === null) return;
+              total += 10 + nextFrame.roll1 + nextFrame.roll2;
               this.frames[i].score = total;
               break;
           }
           break;
         case FrameResult.Complete:
+          total +=
+            (this.frames[i].roll1 || 0) +
+            (this.frames[i].roll2 || 0) +
+            (this.frames[i].roll3 || 0);
+          this.frames[i].score = total;
           break;
       }
     }
@@ -163,7 +188,6 @@ export default class GameStore {
 
   constructor() {
     this.addBowler('Jon Spaeth');
-    this.addBowler('Joe Hixson');
   }
 
   @action addBowler(name: string) {
@@ -172,7 +196,7 @@ export default class GameStore {
   }
 
   @action removeBowler(id: string) {
-    this.bowlers = this.bowlers.filter((b) => b.id === id);
+    this.bowlers = this.bowlers.filter((b) => b.id !== id);
   }
 
   @action clearBowlers() {

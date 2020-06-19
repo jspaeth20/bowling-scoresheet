@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bowler } from '../stores/game-store';
+import GameStore, { Bowler } from '../stores/game-store';
 import {
   Table,
   makeStyles,
@@ -8,7 +8,11 @@ import {
   TableCell,
   TableBody,
   TextField,
+  IconButton,
+  ButtonGroup,
 } from '@material-ui/core';
+import RefreshIcon from '@material-ui/icons/Refresh';
+import DeleteIcon from '@material-ui/icons/Delete';
 import { observer } from 'mobx-react';
 import clsx from 'clsx';
 
@@ -24,11 +28,13 @@ const useStyles = makeStyles((theme) => ({
   },
   bowlerName: {
     fontWeight: 'bold',
+    whiteSpace: 'nowrap',
+    fontSize: 16,
   },
 }));
 
-function ScoreTable(props: { bowler: Bowler }): JSX.Element {
-  const { bowler } = props;
+function ScoreTable(props: { game: GameStore; bowler: Bowler }): JSX.Element {
+  const { bowler, game } = props;
   const classes = useStyles();
 
   return (
@@ -49,12 +55,34 @@ function ScoreTable(props: { bowler: Bowler }): JSX.Element {
 
       <TableBody>
         <TableRow>
+          {/* Player Name and Actions */}
           <TableCell
             className={clsx(classes.tableCell, classes.bowlerName)}
             rowSpan={2}
           >
-            {bowler.name}
+            {/* Bowler Name */}
+            <p>{bowler.name}</p>
+
+            {/* Bowler Actions */}
+            <ButtonGroup variant='text'>
+              <IconButton
+                size='small'
+                color='default'
+                onClick={() => bowler.clearFrames()}
+              >
+                <RefreshIcon />
+              </IconButton>
+              <IconButton
+                size='small'
+                color='default'
+                onClick={() => game.removeBowler(bowler.id)}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </ButtonGroup>
           </TableCell>
+
+          {/* Frame Values */}
           {bowler.frames.map((frame, idx) => [
             <TableCell className={classes.tableCell}>
               <TextField
@@ -77,6 +105,8 @@ function ScoreTable(props: { bowler: Bowler }): JSX.Element {
               ></TextField>
             </TableCell>,
           ])}
+
+          {/* Frame 10 Last Value */}
           <TableCell className={classes.tableCell}>
             <TextField
               inputProps={{ style: { textAlign: 'center' } }}
@@ -85,15 +115,17 @@ function ScoreTable(props: { bowler: Bowler }): JSX.Element {
                   ? ''
                   : bowler.frames[bowler.frames.length - 1].roll3
               }
-              onChange={(event) =>
+              onChange={(event) => {
                 bowler.frames[bowler.frames.length - 1].setRoll3(
                   parseInt(event.target.value)
-                )
-              }
+                );
+                bowler.updateScore();
+              }}
             ></TextField>
           </TableCell>
         </TableRow>
 
+        {/* Frame Scores */}
         <TableRow>
           {bowler.frames.map((frame, idx) => (
             <TableCell

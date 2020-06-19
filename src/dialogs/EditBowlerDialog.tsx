@@ -28,7 +28,7 @@ function EditBowlerDialog(props: BowlerDialogProps): JSX.Element {
 
   return (
     <Dialog open={open} fullWidth maxWidth='sm'>
-      <DialogTitle>Edit Bowler</DialogTitle>
+      <DialogTitle>Add Bowler</DialogTitle>
 
       <DialogContent>
         <TextField
